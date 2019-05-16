@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.board.mapper.ReboardDao">
+    
+    <insert id="writeArticle" parameterType="reboardDto">
+        insert all
+            into board (seq, userid, username, email, subject, content, hit, logtime, bcode)
+            values (#{seq}, #{userid}, #{username}, #{email}, #{subject}, #{content}, 0, sysdate, #{bcode})
+            into reboard (rseq, seq, gcode, depth, step, pseq, reply)
+            values (reboard_rseq.nextval, #{seq}, #{gcode}, #{depth}, #{step}, #{pseq}, 0)
+        select * from dual
+    </insert>
+    
+    <select id="listArticle" parameterType="boardParameterDto" resultType="reboardDto">
+        select c.*, (select count(mseq) from memo where seq = c.seq) memocount
+        from (
+              select rank() over(order by r.gcode desc, r.step) rn, b.seq, b.userid, b.username, b.email, 
+                     replace(b.subject, #{word}, '&lt;b&gt;'||#{word}||'&lt;/b&gt;') subject, b.content, b.hit, b.bcode,
+                     decode(to_char(b.logtime, 'yymmdd') , 
+                                to_char(sysdate, 'yymmdd'), to_char(b.logtime, 'hh24:mi:ss'),
+                                to_char(b.logtime, 'yy.mm.dd')) logtime,
+                     r.rseq, r.gcode, r.depth, r.step, r.pseq, r.reply
+              from board b, reboard r
+              where b.seq = r.seq
+              and b.bcode = #{bcode}
+        <if test="word != null and word != ''">
+            <if test="key == 1">
+                and (b.subject like '%'||#{word}||'%' or b.content like '%'||#{word}||'%')
+            </if>
+            <if test="key == 2">
+                and b.subject like '%'||#{word}||'%'
+            </if>
+            <if test="key == 3">
+                and b.username = #{word}
+            </if>
+            <!--<if test="key == 4">
+                and memo = #{word}
+            </if>-->
+        </if>
+        ) c
+        where c.rn between #{start} and #{end}
+    </select>
+    
+    <select id="totalArticleCount" parameterType="boardParameterDto" resultType="int">
+        select count(seq)
+        from board
+        where bcode = #{bcode}
+        <if test="word != null and word != ''">
+            <if test="key == 1">
+                and (subject like '%'||#{word}||'%' or content like '%'||#{word}||'%')
+            </if>
+            <if test="key == 2">
+                and subject like '%'||#{word}||'%'
+            </if>
+            <if test="key == 3">
+                and username = #{word}
+            </if>
+            <!--<if test="key == 4">
+                and memo = #{word}
+            </if>-->
+        </if>
+    </select>
+    
+    <select id="newArticleCount" parameterType="int" resultType="int">
+        select count(seq)
+        from board
+        where bcode = #{bcode}
+        and to_char(logtime, 'yymmdd') = to_char(sysdate, 'yymmdd')
+    </select>
+    
+    <select id="viewArticle" parameterType="int" resultType="reboardDto">
+        select b.seq, b.userid, b.username, b.email, b.subject, b.content, b.hit, b.bcode, b.logtime,
+               r.rseq, r.gcode, r.depth, r.step, r.pseq, r.reply,
+               (select count(mseq) from memo where seq = #{seq}) memocount,
+               (select count(userid) from sweet_hate where seq = #{seq} and mseq = 0 and flag = 'Y') sweet,
+               (select count(userid) from sweet_hate where seq = #{seq} and mseq = 0 and flag = 'N') hate
+        from board b, reboard r
+        where b.seq = r.seq
+        and b.seq = #{seq}
+    </select>
+    
+    <update id="updateHit" parameterType="int">
+        update board
+        set hit = hit + 1
+        where seq = #{seq}
+    </update>
+    
+    <update id="modifyArticle" parameterType="reboardDto">
+        update board
+        set subject = #{subject}, content = #{content}
+        where seq = #{seq}
+    </update>
+    
+    <delete id="deleteReboardArticle" parameterType="int">
+        delete reboard
+        where seq = #{seq}
+    </delete>
+    
+    <delete id="deleteBoardArticle" parameterType="int">
+        delete board
+        where seq = #{seq}
+    </delete>
+    
+    <!-- 답글처리 -->
+    <update id="updateStep" parameterType="reboardDto">
+        update reboard
+        set step = step + 1
+        where gcode = #{gcode} and step &gt; #{step}
+    </update>
+    
+    <insert id="replyArticle" parameterType="reboardDto">
+        insert all
+            into board (seq, userid, username, email, subject, content, hit, logtime, bcode)
+            values (#{seq}, #{userid}, #{username}, #{email}, #{subject}, #{content}, 0, sysdate, #{bcode})
+            into reboard (rseq, seq, gcode, depth, step, pseq, reply)
+            values (reboard_rseq.nextval, #{seq}, #{gcode}, #{depth} + 1, #{step} + 1, #{pseq}, 0)
+        select * from dual
+    </insert>
+    
+    <update id="updateReply" parameterType="int">
+        update reboard
+        set reply = reply + 1
+        where seq = #{pseq}
+    </update>
+    
+</mapper>

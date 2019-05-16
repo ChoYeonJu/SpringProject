@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.admin.mapper.MemberAdminDao">
+    
+    <select id="listMember" parameterType="listParameterDto" resultType="memberDetailDto">
+        select 	member.*
+        from (
+              select 	rank() over(${orderby}) rn, m.userid, m.username, m.userpwd, m.emailid, m.emaildomain, m.profile, to_char(m.joindate, 'yy.mm.dd') joindate, m.role,
+              d.tel1, d.tel2, d.tel3, d.zipcode, d.address, d.address_detail addressdetail
+              from member m, member_detail d
+              where m.userid = d.userid
+        <if test="word != null and word != ''">
+              and (m.username = #{word} or m.userid = #{word})
+        </if>
+        <if test="sort == 'blind'">
+              and m.role = 2
+        </if>
+          ) member
+        where member.rn between #{start} and #{end}
+    </select>
+    
+    <select id="totalUserCount" parameterType="listParameterDto" resultType="int">
+        select 	count(m.userid)
+        from member m, member_detail d
+        where m.userid = d.userid
+        <if test="word != null and word != ''">
+            and (m.username = #{word} or m.userid = #{word})
+        </if>
+        <if test="sort == 'blind'">
+            and m.role = 2
+        </if>
+    </select>
+    
+    <update id="blindMember" parameterType="map">
+        update member
+        set role = #{role}
+        where userid = #{userid}
+    </update>
+    
+</mapper>

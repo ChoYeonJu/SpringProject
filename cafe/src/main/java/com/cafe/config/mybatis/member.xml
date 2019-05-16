@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.member.mapper.MemberDao">
+    
+    <select id="idCount" parameterType="String" resultType="int">
+        <![CDATA[
+        select count(userid)
+        from member
+        where userid = #{userid}
+        ]]>
+    </select>
+    
+    <insert id="registerMember" parameterType="memberDetailDto">
+        <![CDATA[
+        insert all
+            into member (userid, username, userpwd, emailid, emaildomain, profile, joindate, role)
+            values (#{userid}, #{username}, #{userpwd}, #{emailid}, #{emaildomain}, #{profile}, sysdate, 1)
+            into member_detail (userid, tel1, tel2, tel3, zipcode, address, address_detail)
+            values (#{userid}, #{tel1}, #{tel2}, #{tel3}, #{zipcode}, #{address}, #{addressdetail})
+        select * from dual
+        ]]>
+    </insert>
+    
+    <select id="getMember" parameterType="String" resultType="memberDetailDto">
+        <![CDATA[
+        select m.userid, m.username, m.userpwd, m.emailid, m.emaildomain, m.profile, m.joindate, m.role,
+               d.tel1, d.tel2, d.tel3, d.zipcode, d.address, d.address_detail addressdetail
+        from member m, member_detail d
+        where m.userid = d.userid
+        and m.userid = #{userid}
+        ]]>
+    </select>
+    
+    <update id="modifyMember" parameterType="memberDetailDto">
+        <![CDATA[
+        update member
+        set userpwd = #{userpwd}, emailid = #{emailid}, emaildomain = #{emaildomain}
+        where userid = #{userid}
+        ]]>
+    </update>
+    
+    <update id="modifyMemberDetail" parameterType="memberDetailDto">
+        <![CDATA[
+        update member_detail
+        set tel1 = #{tel1}, tel2 = #{tel2}, tel3 = #{tel3}, zipcode = #{zipcode}, address = #{address}, address_detail = #{addressdetail}
+        where userid = #{userid}
+        ]]>
+    </update>
+    
+    <update id="deleteMember" parameterType="String">
+        <![CDATA[
+        update member
+        set role = 100
+        where userid = #{userid}
+        ]]>
+    </update>
+    
+    <update id="reregisterMember" parameterType="String">
+        <![CDATA[
+        update member
+        set role = 1
+        where userid = #{userid}
+        ]]>
+    </update>
+    
+    <select id="login" parameterType="map" resultType="memberDto">
+        <![CDATA[
+        select userid, username, userpwd, emailid, emaildomain, role
+        from member
+        where userid = #{userid} 
+        and userpwd = #{userpwd}
+        ]]>
+    </select>
+    
+</mapper>

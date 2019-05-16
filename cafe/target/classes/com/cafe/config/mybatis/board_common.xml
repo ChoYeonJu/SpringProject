@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.board.mapper.BoardCommonDao">
+    
+    <resultMap id="shMap" type="java.util.Map">
+        <result property="sweet" column="sweet" javaType="int"/>
+        <result property="hate" column="hate" javaType="int"/>
+    </resultMap>
+    
+    <select id="popularAlbum" resultType="albumDto">
+        select d.seq, d.subject, d.hit, d.bcode, d.memocount, d.control, d.savefolder, d.savepicture
+        from (
+              select c.*, c.sweet * 3 - c.hate * 2 + c.hit grade, (select count(mseq) from memo where seq = c.seq) memocount
+              from (
+                    select b30.*, 'album' control,
+                           (select count(userid) from sweet_hate where seq = b30.seq and mseq = 0 and flag = 'Y') sweet,
+                           (select count(userid) from sweet_hate where seq = b30.seq and mseq = 0 and flag = 'N') hate 
+                    from (
+                          select b.seq, b.subject, b.hit, b.bcode, a.savefolder, a.savepicture 
+                          from board b, album a
+                          where b.seq = a.seq
+                          and logtime between sysdate - 365 and sysdate
+                         ) b30
+                    ) c
+                    order by grade desc
+              ) d
+        where rownum &lt; 5
+    </select>
+    
+    <select id="newAlbum" resultType="albumDto">
+        select c.*
+        from (
+              select b.*, 'album' control, (select count(mseq) from memo where seq = b.seq) memocount
+              from (
+                    select b.seq, b.subject, b.hit, b.bcode, a.savefolder, a.savepicture 
+                    from board b, album a
+                    where b.seq = a.seq
+                    order by logtime desc
+                   ) b
+             ) c
+        where rownum &lt; 5
+    </select>
+    
+    <select id="popularArticle" resultType="boardDto">
+        select d.seq, d.subject, d.hit, d.bcode, d.memocount, d.control
+        from (
+              select c.*, c.sweet * 3 - c.hate * 2 + c.hit grade, (select count(mseq) from memo where seq = c.seq) memocount
+              from (
+                    select b30.*, (select decode(btype, 5, 'reboard', 6, 'album', 7, 'bbs', 'board') from board_list where bcode=b30.bcode) control,
+                           (select count(userid) from sweet_hate where seq = b30.seq and mseq = 0 and flag = 'Y') sweet,
+                           (select count(userid) from sweet_hate where seq = b30.seq and mseq = 0 and flag = 'N') hate 
+                    from (
+                          select seq, subject, bcode, hit 
+                          from board
+                          where logtime between sysdate - 365 and sysdate
+                         ) b30
+              ) c
+              where c.control != 'album'
+              order by grade desc
+              ) d
+        where rownum &lt; 6
+    </select>
+    
+    <select id="newArticle" resultType="boardDto">
+        select c.*
+        from (
+              select b.*, (select decode(btype, 5, 'reboard', 6, 'album', 7, 'bbs', 'board') from board_list where bcode=b.bcode) control,
+                     (select count(mseq) from memo where seq = b.seq) memocount
+              from (
+                    select seq, subject, hit, bcode 
+                    from board
+                    order by logtime desc
+                   ) b
+              ) c
+        where c.control != 'album'
+        and rownum &lt; 6
+    </select>
+    
+    <select id="searchArticle" parameterType="String" resultType="boardDto">
+        select c.*
+        from (
+              select b.*, (select decode(btype, 5, 'reboard', 6, 'album', 7, 'bbs', 'board') from board_list where bcode=b.bcode) control,
+                     (select count(mseq) from memo where seq = b.seq) memocount
+              from (
+                    select rank() over(order by seq desc) rn, seq, userid, username, email, subject, content, hit, bcode,
+                    		decode(to_char(logtime, 'yymmdd') , 
+                                    to_char(sysdate, 'yymmdd'), to_char(logtime, 'hh24:mi:ss'),
+                                    to_char(logtime, 'yy.mm.dd')) logtime
+                    from board
+                    where subject like '%'||#{searchword}||'%'
+                   ) b
+              ) c
+        where c.rn between #{start} and #{end}
+    </select>
+    
+    <select id="totalArticleCount" parameterType="String" resultType="int">
+        select count(seq)
+        from board
+        where subject like '%'||#{searchword}||'%'
+    </select>
+    
+    <select id="getNextSeq" resultType="int">
+        select board_seq.nextval
+        from dual
+    </select>
+    
+    <update id="updateHit" parameterType="int">
+        update board
+        set hit = hit + 1
+        where seq = #{seq}
+    </update>
+    
+    <select id="didSweetOrHate" parameterType="map" resultType="String">
+        select flag 
+        from sweet_hate
+        where seq = #{seq}
+        and mseq = #{mseq}
+        and userid = #{userid}
+    </select>
+    
+    <insert id="sweetOrHate" parameterType="map">
+        insert into sweet_hate (board_sh_seq, seq, mseq, userid, flag)
+        values (sweet_hate_seq.nextval, #{seq}, #{mseq}, #{userid}, #{flag})
+    </insert>
+    
+    <delete id="shCancel" parameterType="map">
+        delete sweet_hate
+        where seq = #{seq}
+        and mseq = #{mseq}
+        and userid = #{userid}
+        and flag = #{flag}
+    </delete>
+    
+    <select id="shCount" parameterType="map" resultMap="shMap">
+        select count(case when flag = 'Y' then 1 end) sweet, 
+               count(case when flag = 'N' then 1 end) hate
+        from sweet_hate
+        where seq = #{seq}
+        and mseq = #{mseq}
+    </select>
+
+</mapper>

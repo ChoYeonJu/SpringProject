@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    
+    <typeAliases>
+        
+        <typeAlias alias="map" type="java.util.Map"/>
+        
+        <typeAlias alias="listParameterDto" type="com.cafe.commons.model.ListParameterDto"/>
+        <typeAlias alias="boardParameterDto" type="com.cafe.board.model.BoardParameterDto"/>
+        
+        <typeAlias alias="boardTypeDto" type="com.cafe.admin.model.BoardTypeDto"/>
+        <typeAlias alias="categoryDto" type="com.cafe.admin.model.CategoryDto"/>
+        <typeAlias alias="boardListDto" type="com.cafe.admin.model.BoardListDto"/>
+        
+        <typeAlias alias="memberDto" type="com.cafe.member.model.MemberDto"/>
+        <typeAlias alias="memberDetailDto" type="com.cafe.member.model.MemberDetailDto"/>
+        
+        <typeAlias alias="boardDto" type="com.cafe.board.model.BoardDto"/>
+        <typeAlias alias="reboardDto" type="com.cafe.board.model.ReboardDto"/>
+        <typeAlias alias="albumDto" type="com.cafe.board.model.AlbumDto"/>
+        <typeAlias alias="bbsDto" type="com.cafe.board.model.BbsDto"/>
+        <typeAlias alias="memoDto" type="com.cafe.board.model.MemoDto"/>
+        
+        <typeAlias alias="pollDto" type="com.cafe.poll.model.PollDto"/>
+        <typeAlias alias="pollAnswerDto" type="com.cafe.poll.model.PollAnswerDto"/>
+        
+    </typeAliases>
+    <!--
+    <mappers>
+        
+        <mapper resource="com/cafe/config/mybatis/admin_board.xml"/>
+        <mapper resource="com/cafe/config/mybatis/admin_member.xml"/>
+        <mapper resource="com/cafe/config/mybatis/admin_poll.xml"/>
+        
+        <mapper resource="com/cafe/config/mybatis/board.xml"/>
+        <mapper resource="com/cafe/config/mybatis/reboard.xml"/>
+        <mapper resource="com/cafe/config/mybatis/album.xml"/>
+        <mapper resource="com/cafe/config/mybatis/bbs.xml"/>
+        <mapper resource="com/cafe/config/mybatis/memo.xml"/>
+        
+        <mapper resource="com/cafe/config/mybatis/member.xml"/>
+        
+        <mapper resource="com/cafe/config/mybatis/poll.xml"/>
+        
+    </mappers>
+    -->
+</configuration>

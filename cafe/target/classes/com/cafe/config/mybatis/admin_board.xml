@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.admin.mapper.BoardAdminDao">
+    
+    <select id="boardTypeList" resultType="boardTypeDto">
+        select btype, btype_name btypeName
+        from board_type
+        order by btype
+    </select>
+    
+    <select id="listBoard" resultType="boardListDto">
+        <![CDATA[
+        select bl.bcode, bl.bname, bl.btype, cl.ccode, cl.cname,
+               decode(bl.btype, 
+                           5, 'reboard', 
+                           6, 'album', 
+                           7, 'bbs', 
+                           'board') control
+        from board_list bl, category_list cl
+        where bl.ccode = cl.ccode
+        order by cl.ccode, bl.bcode
+        ]]>
+    </select>
+    
+    <select id="listCategory" resultType="categoryDto">
+        select ccode, cname 
+        from category_list
+        order by ccode
+    </select>
+    
+    <insert id="makeCategory" parameterType="String">
+        insert into category_list (ccode, cname)
+        values (category_list_seq.nextval, #{cname})
+    </insert>
+    
+    <update id="changeCategory" parameterType="categoryDto">
+        update category_list
+        set cname = #{cname}
+        where ccode = #{ccode}
+    </update>
+    
+    <delete id="deleteCategory" parameterType="int">
+        delete category_list
+        where ccode = #{ccode}
+    </delete>
+    
+    <insert id="makeBoard" parameterType="boardListDto">
+        insert into board_list (bcode, bname, ccode, btype)
+        values (board_list_seq.nextval, #{bname}, #{ccode}, #{btype})
+    </insert>
+    
+    <update id="changeBoard" parameterType="boardListDto">
+        update board_list
+        set bname = #{bname}, btype = #{btype}
+        where bcode = #{bcode}
+    </update>
+    
+    <delete id="deleteBoard" parameterType="int">
+        delete board_list
+        where bcode = #{bcode}
+    </delete>
+    
+</mapper>

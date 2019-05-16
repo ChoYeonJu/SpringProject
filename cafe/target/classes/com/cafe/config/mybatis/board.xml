@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.board.mapper.BoardDao">
+    
+    <insert id="writeArticle" parameterType="boardDto">
+        insert into board (seq, userid, username, email, subject, content, hit, logtime, bcode)
+        values (#{seq}, #{userid}, #{username}, #{email}, #{subject}, #{content}, 0, sysdate, #{bcode})
+    </insert>
+    
+    <select id="listArticle" parameterType="boardParameterDto" resultType="boardDto">
+        select b.*, (select count(mseq) from memo where seq = b.seq) memocount
+        from (
+                select rank() over(order by seq desc) rn, seq, userid, username, email, 
+                replace(subject, #{word}, '&lt;b&gt;'||#{word}||'&lt;/b&gt;') subject, content, hit, bcode,
+                        decode(to_char(logtime, 'yymmdd') , 
+                                    to_char(sysdate, 'yymmdd'), to_char(logtime, 'hh24:mi:ss'),
+                                    to_char(logtime, 'yy.mm.dd')) logtime
+                from board
+                where bcode = #{bcode}
+        <if test="word != null and word != ''">
+            <if test="key == 1">
+                and (subject like '%'||#{word}||'%' or content like '%'||#{word}||'%')
+            </if>
+            <if test="key == 2">
+                and subject like '%'||#{word}||'%'
+            </if>
+            <if test="key == 3">
+                and username = #{word}
+            </if>
+            <!--<if test="key == 4">
+                and memo = #{word}
+            </if>-->
+        </if>
+             ) b
+        where b.rn between #{start} and #{end}
+    </select>
+    
+    <select id="totalArticleCount" parameterType="boardParameterDto" resultType="int">
+        select count(seq)
+        from board
+        where bcode = #{bcode}
+        <if test="word != null and word != ''">
+            <if test="key == 1">
+                and (subject like '%'||#{word}||'%' or content like '%'||#{word}||'%')
+            </if>
+            <if test="key == 2">
+                and subject like '%'||#{word}||'%'
+            </if>
+            <if test="key == 3">
+                and username = #{word}
+            </if>
+            <!--<if test="key == 4">
+                and memo = #{word}
+            </if>-->
+        </if>
+    </select>
+    
+    <select id="newArticleCount" parameterType="int" resultType="int">
+        select count(seq)
+        from board
+        where bcode = #{bcode}
+        and to_char(logtime, 'yymmdd') = to_char(sysdate, 'yymmdd')
+    </select>
+    
+    <select id="viewArticle" parameterType="int" resultType="boardDto">
+        select seq, userid, username, email, subject, content, hit, bcode, logtime,
+               (select count(mseq) from memo where seq = #{seq}) memocount,
+               (select count(userid) from sweet_hate where seq = #{seq} and mseq = 0 and flag = 'Y') sweet,
+               (select count(userid) from sweet_hate where seq = #{seq} and mseq = 0 and flag = 'N') hate
+        from board
+        where seq = #{seq}
+    </select>
+    
+    <update id="modifyArticle" parameterType="boardDto">
+        update board
+        set subject = #{subject}, content = #{content}
+        where seq = #{seq}
+    </update>
+    
+    <update id="updateHit" parameterType="int">
+        update board
+        set hit = hit + 1
+        where seq = #{seq}
+    </update>
+    
+    <delete id="deleteArticle" parameterType="int">
+        delete board
+        where seq = #{seq}
+    </delete>
+    
+</mapper>

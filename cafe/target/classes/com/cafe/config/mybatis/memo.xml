@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cafe.board.mapper.MemoDao">
+    
+    <insert id="writeMemo" parameterType="memoDto">
+        insert into memo (mseq, seq, userid, mcontent, mlogtime, ipaddress)
+        values (memo_mseq.nextval, #{seq}, #{userid}, #{mcontent}, sysdate, #{ipaddress})
+    </insert>
+    
+    <select id="listMemo" parameterType="int" resultType="memoDto">
+        select b.*, b.sweet * 3 - b.hate * 2 grade
+        from (
+                select a.*,
+                       (select count(userid) from sweet_hate where mseq = a.mseq and flag = 'Y') sweet,
+                       (select count(userid) from sweet_hate where mseq = a.mseq and flag = 'N') hate
+                from (
+                      select mseq, seq, userid, mcontent,
+                             substr(ipaddress, 1, instr(ipaddress, '.') - 1) || '.***.***.'||substr(ipaddress, instr(ipaddress, '.', -1) + 1) ipaddress,
+                             case when floor((sysdate - mlogtime) * 24) = 0
+                                  then to_char(round(((sysdate - mlogtime) * 24) * 60))||'분 전'
+                                  when floor((sysdate - mlogtime) * 24) &lt; 23
+                                  then to_char(round((sysdate - mlogtime) * 24))||'시간 전'
+                                  else to_char(mlogtime, 'yy.mm.dd')
+                             end mlogtime
+                      from memo
+                      where seq = #{seq}
+                     ) a
+               ) b
+        <if test="sort == 'best'">
+            order by grade desc 
+        </if>
+        <if test="sort == 'latest'">
+            order by b.mseq desc 
+        </if>
+    </select>
+    
+    <update id="modifyMemo" parameterType="memoDto">
+        update memo
+        set mcontent = #{mcontent}
+        where mseq = #{mseq}
+    </update>
+    
+    <delete id="deleteMemo" parameterType="int">
+        delete memo
+        where mseq = #{mseq}
+    </delete>
+    
+</mapper>
